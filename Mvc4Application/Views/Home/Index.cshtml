@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width" />
+        <title>Index</title>
+
+        <script src="~/Scripts/jquery-1.9.1.js"></script>
+        <script src="~/Scripts/knockout-2.2.1.js"></script>
+        <script src="~/Scripts/knockout-mvcvalidation.js"></script>
+
+        <script type="text/javascript">
+            var app = {};
+
+            app.newUserModel = function (element) {
+                var self = this;
+
+                ko.validation.parseForm(element, self)
+
+                self.FullName = ko.computed(function () {
+                    return self.FirstName() + ' ' + self.LastName();
+                });
+
+                self.reset = function () {
+                    self.resetValidation();
+                };
+
+                self.submit = function () {
+                    self.validate();
+
+                    if (self.isValid()) {
+                        // Post to server
+                    }
+                }
+            }
+
+            $(function () {
+                app.NewUserModel = ko.validatedObservable(new app.newUserModel("#app-newuser-dialog"));
+                ko.applyBindings(app.NewUserModel, $("#app-newuser-dialog")[0]);
+            });
+        </script>
+    </head>
+    <body>
+        <div>
+        
+        </div>
+        @Html.Partial("~/Views/Home/_NewUserDialog.cshtml", new Mvc4Application.Models.NewUser())
+    </body>
+</html>

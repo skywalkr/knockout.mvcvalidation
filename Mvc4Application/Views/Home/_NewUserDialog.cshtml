@@ -1,0 +1,37 @@
+﻿@model Mvc4Application.Models.NewUser
+
+<div id="app-newuser-dialog">
+    <p>The form below tests a predefined model and the following validators:</p>
+    <ul>
+        <li>RegularExpression</li>
+        <li>Required</li>
+        <li>StringLength</li>
+    </ul>
+    <form data-bind="submit: submit">
+        <fieldset>
+            <legend></legend>
+
+            <div class="field-editor">
+                @Html.LabelFor(m => m.FirstName)
+                @Html.TextBoxFor(m => m.FirstName)
+                @Html.ValidationMessageFor(m => m.FirstName)
+            </div>
+            <div class="field-editor">
+                @Html.LabelFor(m => m.LastName)
+                @Html.TextBoxFor(m => m.LastName)
+                @Html.ValidationMessageFor(m => m.LastName)
+            </div>
+            <div class="field-editor">
+                @Html.LabelFor(m => m.EmailAddress)
+                @Html.TextBoxFor(m => m.EmailAddress)
+                @Html.ValidationMessageFor(m => m.EmailAddress)
+            </div>
+            <div>Your Full Name is <span data-bind="text: FullName"></span></div>
+        </fieldset>
+        <div>
+            <button type="button" data-bind="click: reset">Reset</button>
+            <button type="submit">Submit</button>
+            <span data-bind="visible: !isValid()">Form is invalid</span>
+        </div>
+    </form>
+</div>
