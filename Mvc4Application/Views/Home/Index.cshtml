@@ -15,7 +15,7 @@
             app.newUserModel = function (element) {
                 var self = this;
 
-                ko.validation.parseForm(element, self)
+                ko.validation.parseElement(element, self)
 
                 self.FullName = ko.computed(function () {
                     return self.FirstName() + ' ' + self.LastName();
@@ -29,9 +29,28 @@
                     self.validate();
 
                     if (self.isValid()) {
-                        // Post to server
+                        $.ajax({
+                            type: "PUT",
+                            url: "api/user",
+                            data: self.toJSON(),
+
+                        }).error(function(request) {
+                            if (request.status === 400) {
+                                ko.validation.parseInvalidRequest($.parseJSON(request.responseText), self, "User");
+                            }
+                        }).success(function() {
+                            
+                        });
                     }
                 }
+
+                self.toJSON = function () {
+                    return {
+                        "FirstName": self.FirstName(),
+                        "LastName": self.LastName(),
+                        "EmailAddress": self.EmailAddress()
+                    };
+                };
             }
 
             $(function () {

@@ -1,15 +1,17 @@
-﻿$(function () {
+﻿/*global ko: false*/
+
+$(function () {
     if (typeof (ko) === "undefined") { throw 'Knockout is required, please ensure it is loaded before loading this plug-in'; }
 
     ko.validation = {
-        parseForm: function (selector, model) {
-            var form = $(selector);
+        parseElement: function (selector, model) {
+            var element = $(selector);
 
             if (model === undefined) {
                 model = new Object({});
             }
 
-            form.find(":input:not(:button)").each(function () {
+            element.find(":input:not(:button)").each(function () {
                 var input = $(this),
                     propertyName = input.attr("name");
 
@@ -23,7 +25,7 @@
                 if (input.attr("data-val")) {
                     model[propertyName].extend({ validatable: {} });
 
-                    form.find("span[data-valmsg-for='" + propertyName + "']")
+                    element.find("span[data-valmsg-for='" + propertyName + "']")
                         .attr("data-bind", "text: " + propertyName + ".validationMessage(), visible: !" + propertyName + ".isValid()");
 
                     if (input.attr("data-val-required")) {
@@ -35,10 +37,30 @@
                     }
 
                     if (input.attr("data-val-length")) {
+                        if (input.attr("data-val-length-min")) {
+                            model[propertyName].extend({
+                                minLength: {
+                                    bound: input.attr("data-val-length-max"),
+                                    message: input.attr("data-val-length")
+                                }
+                            });
+                        }
+
+                        if (input.attr("data-val-length-max")) {
+                            model[propertyName].extend({
+                                maxLength: {
+                                    bound: input.attr("data-val-length-max"),
+                                    message: input.attr("data-val-length")
+                                }
+                            });
+                        }
+                    }
+
+                    if (input.attr("data-val-regex")) {
                         model[propertyName].extend({
-                            maxLength: {
-                                bound: input.attr("data-val-length-max"),
-                                message: input.attr("data-val-length")
+                            pattern: {
+                                expression: input.attr("data-val-regex-pattern"),
+                                message: input.attr("data-val-regex")
                             }
                         });
                     }
@@ -46,13 +68,59 @@
             });
 
             return model;
+        },
+        parseInvalidRequest: function (data, model, modelPrefix) {
+            model.isValid(false);
+
+            for (var prop in data.ModelState) {
+                if (prop === modelPrefix) {
+                    model.validationMessage(data.ModelState[prop]);
+                }
+
+                if (prop.indexOf(modelPrefix, 0) >= 0) {
+                    var propertyName = prop.substring(prop.indexOf(".", 0) + 1);
+
+                    if (model.hasOwnProperty(propertyName)) {
+                        model[propertyName].isValid(false);
+                        model[propertyName].validationMessage(data.ModelState[prop]);
+                    }
+                }
+            }
         }
-    }
+    };
+
+    ko.extenders.minLength = function (observable, parameters) {
+        var validator = new Object({
+            isValid: ko.observable(false),
+            message: parameters.message
+        });
+
+        var array = observable.validators();
+        array.push(validator);
+
+        function validate(newValue) {
+            if (observable.isValidatable()) {
+                validator.isValid(newValue.length >= parameters.bound);
+                observable.validators.valueHasMutated();
+            }
+        }
+
+        observable.subscribe(validate);
+
+        observable.isValidatable.subscribe(function (newValue) {
+            if (!newValue) {
+                observable.isValid(true);
+                observable.validationMessage("");
+            }
+        });
+
+        return observable;
+    };
 
     ko.extenders.maxLength = function (observable, parameters) {
         var validator = new Object({
             isValid: ko.observable(false),
-            message: parameters.message,
+            message: parameters.message
         });
 
         var array = observable.validators();
@@ -75,12 +143,40 @@
         });
 
         return observable;
-    }
+    };
+
+    ko.extenders.pattern = function (observable, parameters) {
+        var validator = new Object({
+            isValid: ko.observable(false),
+            message: parameters.message
+        });
+
+        var array = observable.validators();
+        array.push(validator);
+
+        function validate(newValue) {
+            if (observable.isValidatable()) {
+                validator.isValid(newValue.match(parameters.expression) != null);
+                observable.validators.valueHasMutated();
+            }
+        }
+
+        observable.subscribe(validate);
+
+        observable.isValidatable.subscribe(function (newValue) {
+            if (!newValue) {
+                observable.isValid(true);
+                observable.validationMessage("");
+            }
+        });
+
+        return observable;
+    };
 
     ko.extenders.required = function (observable, parameters) {
         var validator = new Object({
             isValid: ko.observable(false),
-            message: parameters.message,
+            message: parameters.message
         });
 
         var array = observable.validators();
@@ -94,7 +190,7 @@
         }
 
         observable.subscribe(validate);
-        
+
         observable.isValidatable.subscribe(function (newValue) {
             if (!newValue) {
                 observable.isValid(true);
@@ -103,7 +199,7 @@
         });
 
         return observable;
-    }
+    };
 
     ko.extenders.validatable = function (observable, parameters) {
         observable.isValid = ko.observable(true);
@@ -124,7 +220,7 @@
                 observable.validationMessage(validator.message);
             }
         });
-    }
+    };
 
     ko.validatedObservable = function (observable) {
         observable.isValid = ko.observable(true);
@@ -140,7 +236,7 @@
                     array.push(item);
                 });
             }
-        };
+        }
 
         observable.resetValidation = function () {
             observable.isValid(true);
@@ -151,7 +247,7 @@
                     observable[prop](observable[prop + "_Default"]);
                     observable[prop].isValidatable(true);
                 }
-            };
+            }
         };
 
         observable.validate = function () {
@@ -159,7 +255,7 @@
                 if (observable[prop].hasOwnProperty("isValidatable")) {
                     observable[prop].valueHasMutated();
                 }
-            };
+            }
 
             var validator = ko.utils.arrayFirst(observable.validators(), function (item) {
                 return !item.isValid();
@@ -173,5 +269,5 @@
         };
 
         return observable;
-    }
+    };
 });

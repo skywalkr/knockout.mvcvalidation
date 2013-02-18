@@ -19,6 +19,8 @@ namespace Mvc4Application
             WebApiConfig.Register(GlobalConfiguration.Configuration);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
+
+            GlobalConfiguration.Configuration.Filters.Add(new ValidationFilter());
         }
     }
 }

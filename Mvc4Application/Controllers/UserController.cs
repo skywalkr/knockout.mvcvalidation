@@ -11,8 +11,17 @@ namespace Mvc4Application.Controllers
     {
         public Models.NewUser Put(Models.NewUser User)
         {
-            User.CreatedDate = DateTime.Now;
-            User.UserId = System.Guid.NewGuid();
+            if (User.EmailAddress == "test@aol.com")
+            {
+                ModelState.AddModelError("User", "Test model error.");
+                ModelState.AddModelError("User.FirstName", "A User with that Email Address already exists.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                User.CreatedDate = DateTime.Now;
+                User.UserId = System.Guid.NewGuid();
+            }
 
             return User;
         }
